@@ -1,0 +1,752 @@
+<?xml version="1.0"?>
+<project name="project" default="run" xmlns:fl="antlib:it.haefelinger.flaka" xmlns:if="ant:if" xmlns:unless="ant:unless">
+	<target name="init">
+		<!-- dependencia jar ant-contrib uso switch -->
+		<taskdef resource="net/sf/antcontrib/antcontrib.properties" />
+		<taskdef resource="net/sf/antcontrib/antlib.xml" />
+		<property environment="env" />
+
+		<typedef resource="org/tigris/subversion/svnant/svnantlib.xml" />
+
+		<!-- VALIDAR VARIABLES GLOBALES -->
+		<fail message="FALTA CONFIGURAR EL PARAMETRO: AMBIENTE, valores posibles: [LOCAL,DESA,QA,PROD]" unless="env.AMBIENTE" />
+		<fail message="FALTA CONFIGURAR EL PARAMETRO: DESPLEGAR_CONFIG" unless="env.DESPLEGAR_CONFIG" />
+		<fail message="FALTA CONFIGURAR EL PARAMETRO: DESPLEGAR_APP_REVISION" unless="env.DESPLEGAR_APP_REVISION" />
+		<fail message="FALTA CONFIGURAR EL PARAMETRO: FR" unless="env.FR" />
+		<fail message="FALTA CONFIGURAR EL PARAMETRO: DESPLEGAR_TIMEOUT" unless="env.DESPLEGAR_TIMEOUT" />
+		<fail message="FALTA CONFIGURAR EL PARAMETRO: ESBIIB_DSPLEGAR_APPDOMAINS" unless="env.ESBIIB_DESPLEGAR_APPDOMAINS" />
+		<fail message="FALTA CONFIGURAR EL PARAMETRO: ESBIIB_MODBAR_MANUAL" unless="env.ESBIIB_MODBAR_MANUAL" />
+		<fail message="FALTA CONFIGURAR EL PARAMETRO: ESBIIB_FUENTES_CONFIG" unless="env.ESBIIB_FUENTES_CONFIG" />
+		<fail message="FALTA CONFIGURAR EL PARAMETRO: ESBIIB_PARAM_SVNURLBASE" unless="env.ESBIIB_PARAM_SVNURLBASE" />
+		<fail message="FALTA CONFIGURAR EL PARAMETRO: ESBIIB_PARAM_SVNUSER" unless="env.ESBIIB_PARAM_SVNUSER" />
+		<fail message="FALTA CONFIGURAR EL PARAMETRO: ESBIIB_PARAM_SVNPASS" unless="env.ESBIIB_PARAM_SVNPASS" />
+		<fail message="FALTA CONFIGURAR EL PARAMETRO: ESBIIB_DEPLOY_CONFIG_PATH" unless="env.ESBIIB_DEPLOY_CONFIG_PATH" />
+
+
+
+		<fail message="FALTA CONFIGURAR EL PARAMETRO: ESBIIB_DEPLOY_APP_	STOP" unless="env.ESBIIB_DEPLOY_APP_STOP" />
+		<fail message="FALTA CONFIGURAR EL PARAMETRO: ESBIIB_DEPLOY_APP_DELETE" unless="env.ESBIIB_DEPLOY_APP_DELETE" />
+		<fail message="FALTA CONFIGURAR EL PARAMETRO: ESBIIB_DEPLOY_APP_MONITORING" unless="env.ESBIIB_DEPLOY_APP_MONITORING" />
+		<fail message="FALTA CONFIGURAR EL PARAMETRO: ESBIIB_SCRIPT_BROKER" unless="env.ESBIIB_SCRIPT_BROKER" />
+		<fail message="FALTA CONFIGURAR EL PARAMETRO: ESBIIB_SCRIPT_MQ" unless="env.ESBIIB_SCRIPT_MQ" />
+		<fail message="FALTA CONFIGURAR EL PARAMETRO: ESBIIB_UNIT_TESTING" unless="env.ESBIIB_UNIT_TESTING" />
+
+
+
+
+		<!--  VALIDAR VARIABLES GLOBALES -->
+
+		<property name="final.deploy.ambiente" value="${env.AMBIENTE}" />
+		<property name="final.deploy.config.appdomains" value="${env.ESBIIB_DESPLEGAR_APPDOMAINS}" />
+		<property name="final.deploy.config.appdomains.eg" value="${env.ESBIIB_DESPLEGAR_APPDOMAINS_EG}" />
+		<property name="final.deploy.config.appdomains.config" value="${env.ESBIIB_DESPLEGAR_APPDOMAINS_CONFIG}" />
+
+
+		<property name="final.deploy.config.app.stop" value="${env.ESBIIB_DEPLOY_APP_STOP}" />
+		<property name="final.deploy.config.app.delete" value="${env.ESBIIB_DEPLOY_APP_DELETE}" />
+		<property name="final.deploy.config.app.monitoring" value="${env.ESBIIB_DEPLOY_APP_MONITORING}" />
+		<property name="final.deploy.config.script.broker" value="${env.ESBIIB_SCRIPT_BROKER}" />
+		<property name="final.deploy.config.script.mq" value="${env.ESBIIB_SCRIPT_MQ}" />
+		<property name="final.deploy.config.unit.testing" value="${env.ESBIIB_UNIT_TESTING}" />
+
+		<property name="svnant.repository.user" value="${env.ESBIIB_PARAM_SVNUSER}" />
+		<property name="svnant.repository.passwd" value="${env.ESBIIB_PARAM_SVNPASS}" />
+		<property name="final.fuentes.repositorios" value="${env.ESBIIB_FUENTES_CONFIG}" />
+		<property name="final.fuentes.repositorios.base.url" value="${env.ESBIIB_PARAM_SVNURLBASE}" />
+
+
+		<!-- TODO con figurar en proyectos-->
+		<property name="final.modbar.config.manual" value="${env.ESBIIB_MODBAR_MANUAL}" />
+		<property name="final.modbar.config.extra" value="${env.ESBIIB_MODBAR_MANUAL_CONFIG}" />
+
+
+		<property name="path.build" value="deploy-config" />
+		<property name="final.output.dir.props" value="${env.WORKSPACE}${file.separator}resources" />
+		<property name="final.output.dir" value="${env.WORKSPACE}${file.separator}OUTPUT${file.separator}BUILD${env.BUILD_NUMBER}" />
+		<property name="final.deploy.fr.number" value="${env.FR}" />
+		<property name="final.job.name" value="${env.JOB_NAME}" />
+
+		<property name="final.deploy.app.revision" value="${env.DESPLEGAR_APP_REVISION}" />
+
+		<switch value="${final.deploy.ambiente}">
+			<case value="LOCAL">
+				<echo message="****************        INSTALACION LOCAL       *************************" />
+				<property name="final.ambiente.qmgr" value="IB9QMGR" />
+				<property name="final.ambiente.node" value=" " />
+				<property name="final.ambiente.server" value=" " />
+				<property name="final.ambiente.port" value=" " />
+				<var name="final.ambiente.eg" unset="true" />
+				<property name="final.ambiente.eg" value="default" />
+			</case>
+			<case value="DESA">
+				<echo message="****************        INSTALACION PLATAFORMA DESARROLLO       *************************" />
+			</case>
+			<case value="QA">
+				<echo message="****************        INSTALACION PLATAFORMA QA       *************************" />
+			</case>
+			<case value="PROD">
+				<echo message="****************        INSTALACION PLATAFORMA PRODUCCION       *************************" />
+			</case>
+
+		</switch>
+		<property name="final.fuentes.origen" value="${env.WORKSPACE}${file.separator}source" />
+		<property name="final.fuentes.principal" value="${env.WORKSPACE}${file.separator}principal" />
+		<property name="final.fuentes.workspace" value="${env.WORKSPACE}${file.separator}allsources" />
+		<property name="final.deploy.timeout" value="${env.DESPLEGAR_TIMEOUT}" />
+		<property name="final.home.engine" value="${env.ESB_ENGINE_HOME}${file.separator}bin" />
+		<property name="final.home.engine.classes" value="${env.ESB_ENGINE_HOME}${file.separator}classes" />
+		<property name="final.home.toolkit" value="${env.ESB_TOOLKIT_HOME}" />
+		<property name="final.deploy.habilitado" value="${env.DESPLEGAR}" />
+		<property name="final.deploy.config" value="${env.DESPLEGAR_CONFIG}" />
+		<property name="final.deploy.fileconfig" value="${env.ESBIIB_DEPLOY_CONFIG_PATH}${final.deploy.ambiente}.broker" />
+	</target>
+
+
+
+	<target name="run" description="" depends="init">
+		<echo message="java.class.path: ${java.class.path}" />
+		<property environment="env" />
+		<antcall target="UnitTestingSOAP" />
+		<antcall target="ComandosBroker" />
+		<antcall target="ComandosMQ" />
+		<antcall target="checkoutFuentes" />
+		<antcall target="prepararWorkSpace" />
+		<antcall target="contruirBAR" />
+		<antcall target="respaldarWorkSpace" />
+		<antcall target="leerBARpreMod" />
+		<antcall target="modificarBAR" />
+		<antcall target="leerBARpostMod" />
+		<antcall target="deployBAR" />
+	</target>
+
+	<target name="contruirBAR" depends="init">
+		<property environment="env" />
+
+		<echo message="final.home.toolkit: ${final.home.toolkit}" />
+		<echo message="final.deploy.fr.number: ${final.deploy.fr.number}" />
+		<echo message="final.deploy.app.revision: ${final.deploy.app.revision}" />
+
+		<!-- COMPILACION BAR APP DOMAINS -->
+
+		<if>
+			<istrue value="${final.deploy.config.appdomains}" />
+			<then>
+				<echo message="AppDomains: ${final.deploy.config.appdomains.config} " />
+
+				<for list="${final.deploy.config.appdomains.config}" param="comp.appdomain.name">
+					<sequential>
+						<echo message="AppDomain  : @{comp.appdomain.name}" />
+						<var name="final.ambiente.eg" unset="true" />
+						<property name="final.ambiente.eg" value="${final.deploy.config.appdomains.eg}" />
+						<var name="final.deploy.app.name" unset="true" />
+						<property name="final.deploy.app.name" value="@{comp.appdomain.name}" />
+
+						<var name="final.bar.name" unset="true" />
+						<property name="final.bar.name" value="${final.output.dir}${file.separator}@{comp.appdomain.name}_${final.deploy.ambiente}_rev${final.deploy.app.revision}_FR${final.deploy.fr.number}_BUILD_${env.BUILD_NUMBER}.bar" />
+
+
+
+						<var name="final.compilacion.log" unset="true" />
+						<property name="final.compilacion.log" value="${final.output.dir}${file.separator}@{comp.appdomain.name}_log_compilacionBAR_BUILD_${env.BUILD_NUMBER}.txt" />
+						<var name="final.compilacion.log1" unset="true" />
+						<property name="final.compilacion.log1" value="${final.output.dir}${file.separator}@{comp.appdomain.name}_soloCompila_${env.BUILD_NUMBER}.txt" />
+
+						<if>
+							<available file="${final.bar.name}" />
+							<then>
+								<echo message="Ya existe el BAR: ${final.bar.name}" />
+							</then>
+							<else>
+								<antcall target="buildBARTask" />
+							</else>
+						</if>
+					</sequential>
+				</for>
+			</then>
+			<else>
+				<echo message="NO se detecta la necesidad compilar BARS de AppDomains (DotNET)" />
+			</else>
+		</if>
+
+		<!-- COMPILACION BAR APLICACIONES -->
+		<var name="index" value="1" />
+		<for list="${final.deploy.config}" param="letter">
+			<sequential>
+				<var name="final.index" unset="true" />
+				<property name="final.index" value="@{letter}" />
+				<var name="final.deploy.app.name" unset="true" />
+				<var name="final.ambiente.eg" unset="true" />
+				<fl:let>
+					final.deploy.app.name := split('${final.index}',':')[0]
+				   </fl:let>
+
+				<fl:let>
+					final.ambiente.eg := split('${final.index}',':')[1]
+				</fl:let>
+
+
+				<var name="final.bar.name" unset="true" />
+				<property name="final.bar.name" value="${final.output.dir}${file.separator}${final.deploy.app.name}_${final.deploy.ambiente}_rev${final.deploy.app.revision}_FR${final.deploy.fr.number}_BUILD_${env.BUILD_NUMBER}.bar" />
+
+				<echo message="final.bar.name: ${final.bar.name}" />
+
+
+				<var name="final.compilacion.log" unset="true" />
+				<property name="final.compilacion.log" value="${final.output.dir}${file.separator}${final.deploy.app.name}_log_compilacionBAR_BUILD_${env.BUILD_NUMBER}.txt" />
+				<var name="final.compilacion.log1" unset="true" />
+				<property name="final.compilacion.log1" value="${final.output.dir}${file.separator}${final.deploy.app.name}_soloCompilaBAR_BUILD_${env.BUILD_NUMBER}.txt" />
+
+				<if>
+					<available file="${final.bar.name}" />
+					<then>
+						<echo message="Ya existe el BAR: ${final.bar.name}" />
+					</then>
+					<else>
+						<antcall target="buildBARTask" />
+					</else>
+				</if>
+			</sequential>
+		</for>
+
+
+	</target>
+
+
+
+
+	<target name="buildBARTask" depends="init">
+		<echo message="final.deploy.app.name: ${final.deploy.app.name}" />
+		<echo message="final.compilacion.log: ${final.compilacion.log}" />
+
+		<exec executable="${final.home.toolkit}${file.separator}mqsicreatebar" failonerror="true" resultproperty="execrc">
+			<arg value="-data" />
+			<arg value="${final.fuentes.workspace}" />
+			<arg value="-b" />
+			<arg value="${final.bar.name}" />
+			<arg value="-a" />
+			<arg value="${final.deploy.app.name}" />
+			<arg value="-cleanBuild" />
+			<arg value="-deployAsSource" />
+			<arg value="-trace" />
+			<arg value="-v" />
+			<arg value="${final.compilacion.log}" />
+		</exec>
+	</target>
+
+	<target name="deployBAR" depends="init">
+		<property environment="env" />
+		<sequential>
+			<echo message="final.deploy.ambiente: ${final.deploy.ambiente}" />
+			<echo message="final.deploy.app.revision: ${final.deploy.app.revision}" />
+			<echo message="final.deploy.timeout: ${final.deploy.timeout}" />
+			<echo message="final.home.engine: ${final.home.engine}" />
+			<!-- 
+			<echo message="final.ambiente.qmgr: ${final.ambiente.qmgr}" />
+			<echo message="final.ambiente.node: ${final.ambiente.node}" />
+			<echo message="final.ambiente.server: ${final.ambiente.server}" />
+			<echo message="final.ambiente.port: ${final.ambiente.port}" />
+			-->
+
+
+			<!--DEPLOY APP DOMAINS -->
+			<if>
+				<istrue value="${final.deploy.config.appdomains}" />
+				<then>
+					<echo message="Se detecta la necesidad de deploy de AppDomains (DotNET)" />
+					<echo message="AppDomains: ${final.deploy.config.appdomains.config} " />
+
+					<for list="${final.deploy.config.appdomains.config}" param="appdomain.name">
+						<sequential>
+							<var name="final.index" unset="true" />
+							<property name="final.index" value="@{appdomain.name}" />
+							<var name="final.deploy.app.name" unset="true" />
+							<property name="final.deploy.app.name" value="@{appdomain.name}" />
+
+							<var name="final.ambiente.eg" unset="true" />
+							<property name="final.ambiente.eg" value="${final.deploy.config.appdomains.eg}" />
+
+							<var name="final.bar.name" unset="true" />
+							<property name="final.bar.name" value="${final.output.dir}${file.separator}@{appdomain.name}_${final.deploy.ambiente}_rev${final.deploy.app.revision}_FR${final.deploy.fr.number}_BUILD_${env.BUILD_NUMBER}.bar" />
+
+							<var name="final.deploy.log" unset="true" />
+							<property name="final.deploy.log" value="${final.output.dir}${file.separator}@{appdomain.name}_log_deployBAR_BUILD_${env.BUILD_NUMBER}.txt" />
+
+
+							<switch value="${final.deploy.ambiente}">
+								<case value="LOCAL">
+									<echo message="Configuración Local detectada para deploy de AppDomain" />
+									<antcall target="deploBARToLocal" />
+								</case>
+								<default>
+									<echo message="Configuración Remota detectada para deploy de AppDomain" />
+									<antcall target="deploBARRemote" />
+								</default>
+							</switch>
+
+						</sequential>
+					</for>
+
+				</then>
+				<else>
+					<echo message="NO se detecta la necesidad de deploy de AppDomains (DotNET)" />
+				</else>
+			</if>
+
+
+			<!-- DEPLOY BARS APLICACIONES -->
+
+			<var name="index" value="1" />
+			<for list="${final.deploy.config}" param="letter">
+				<sequential>
+					<var name="final.index" unset="true" />
+					<property name="final.index" value="@{letter}" />
+					<var name="final.deploy.app.name" unset="true" />
+					<var name="final.ambiente.eg" unset="true" />
+					<fl:let>
+						final.deploy.app.name := split('${final.index}',':')[0]
+					   </fl:let>
+					<fl:let>
+						final.ambiente.eg := split('${final.index}',':')[1]
+					</fl:let>
+
+					<var name="final.bar.name" unset="true" />
+					<property name="final.bar.name" value="${final.output.dir}${file.separator}${final.deploy.app.name}_${final.deploy.ambiente}_rev${final.deploy.app.revision}_FR${final.deploy.fr.number}_BUILD_${env.BUILD_NUMBER}.bar" />
+
+					<var name="final.deploy.log" unset="true" />
+					<property name="final.deploy.log" value="${final.output.dir}${file.separator}${final.deploy.app.name}_log_deployBAR_BUILD_${env.BUILD_NUMBER}.txt" />
+
+
+					<switch value="${final.deploy.ambiente}">
+						<case value="LOCAL">
+							<echo message="Configuración Local detectada para deploy de Aplicacion" />
+							<antcall target="deploBARToLocal" />
+						</case>
+						<default>
+							<echo message="Configuración Remota detectada para deploy de Aplicacion" />
+							<antcall target="deploBARRemote" />
+						</default>
+					</switch>
+
+				</sequential>
+			</for>
+		</sequential>
+	</target>
+
+	<target name="deploBARToLocal">
+		<echo message="final.ambiente.qmgr: ${final.ambiente.qmgr}" />
+		<echo message="final.deploy.app.name: ${final.deploy.app.name}" />
+		<echo message="final.ambiente.eg: ${final.ambiente.eg}" />
+		<echo message="final.bar.name: ${final.bar.name}" />
+		<echo message="final.deploy.log: ${final.deploy.log}" />
+
+		<!-- PRE-DEPLOY REVIEW -->
+		<antcall target="DEPLOY_REVIEW" />
+
+		<!-- STOP APP -->
+		<antcall target="STOP_APP" />
+
+		<!-- UNDEPLOY -->
+		<antcall target="UNDEPLOY_APP" />
+
+		<!-- DEPLOY -->
+		<echo message="DEPLOY " />
+		<exec dir="${final.output.dir}" executable="cmd" failonerror="true" resultproperty="execrc">
+			<arg value="/c ${final.home.engine}${file.separator}mqsiprofile.cmd &amp;&amp; CALL ${final.home.engine}${file.separator}mqsideployscript.bat -q ${final.ambiente.qmgr} -e ${final.ambiente.eg} -a ${final.bar.name} -w ${final.deploy.timeout} -v ${final.deploy.log}" />
+		</exec>
+
+		<!-- POST-DEPLOY REVIEW -->
+		<antcall target="DEPLOY_REVIEW" />
+
+		<!-- MONITORING -->
+		<antcall target="MONITORING_APP" />
+
+	</target>
+
+	<target name="deploBARRemote">
+		<echo message="final.deploy.app.name: ${final.deploy.app.name}" />
+		<echo message="final.deploy.fileconfig: ${final.deploy.fileconfig}" />
+		<echo message="final.ambiente.eg: ${final.ambiente.eg}" />
+		<echo message="final.bar.name: ${final.bar.name}" />
+		<echo message="final.deploy.log: ${final.deploy.log}" />
+
+		<!-- PRE-DEPLOY REVIEW -->
+		<antcall target="DEPLOY_REVIEW" />
+
+		<!-- STOP APP -->
+		<antcall target="STOP_APP" />
+
+		<!-- UNDEPLOY -->
+		<antcall target="UNDEPLOY_APP" />
+
+		<!-- DEPLOY -->
+		<echo message="DEPLOY " />
+		<exec dir="${final.output.dir}" executable="cmd" failonerror="true" resultproperty="execrc">
+			<arg value="/c ${final.home.engine}${file.separator}mqsiprofile.cmd &amp;&amp; CALL ${final.home.engine}${file.separator}mqsideployscript.bat -n ${final.deploy.fileconfig} -e ${final.ambiente.eg} -a ${final.bar.name} -w ${final.deploy.timeout} -v ${final.deploy.log}" />
+		</exec>
+
+		<!-- POST-DEPLOY REVIEW -->
+		<antcall target="DEPLOY_REVIEW" />
+
+		<!-- MONITORING -->
+		<antcall target="MONITORING_APP" />
+
+
+
+
+	</target>
+
+	<target name="DEPLOY_REVIEW">
+		<echo message="DEPLOY REVIEW " />
+		<exec executable="C:\PSTools\paexec.exe" failonerror="true" resultproperty="execrc">
+			<arg value="-accepteula" />
+			<arg value="\\srvbusdesa01" />
+			<arg value="cmd" />
+			<arg value="/c" />
+			<arg value="&quot;E:\IBM\MQSI\9.0.0.3\bin\mqsiprofile.cmd&quot; &amp;&amp; mqsilist NODE_DESA_01 -e ${final.ambiente.eg} -d2 -w ${final.deploy.timeout}" />
+		</exec>
+	</target>
+
+	<target name="UNDEPLOY_APP">
+		<if>
+			<istrue value="${final.deploy.config.app.delete}" />
+			<then>
+				<echo message="UNDEPLOY " />
+				<exec dir="${final.output.dir}" executable="cmd" failonerror="true" resultproperty="execrc">
+					<arg value="/c ${final.home.engine}${file.separator}mqsiprofile.cmd &amp;&amp; CALL ${final.home.engine}${file.separator}mqsideployscript.bat -n ${final.deploy.fileconfig} -e ${final.ambiente.eg} -d ${final.deploy.app.name} -w ${final.deploy.timeout} -v ${final.deploy.log}" />
+				</exec>
+			</then>
+			<else>
+				<echo message="NO se detecta la necesidad compilar BARS de AppDomains (DotNET)" />
+			</else>
+		</if>
+	</target>
+
+	<target name="STOP_APP">
+		<if>
+			<istrue value="${final.deploy.config.app.stop}" />
+			<then>
+				<echo message="La opción de detener la APP está ACTIVADA" />
+				<exec executable="C:\PSTools\paexec.exe" failonerror="true" resultproperty="execrc">
+					<arg value="-accepteula" />
+					<arg value="\\srvbusdesa01" />
+					<arg value="cmd" />
+					<arg value="/c" />
+					<arg value="&quot;E:\IBM\MQSI\9.0.0.3\bin\mqsiprofile.cmd&quot; &amp;&amp; mqsistopmsgflow NODE_DESA_01 -e ${final.ambiente.eg} -k ${final.deploy.app.name} -w ${final.deploy.timeout}" />
+				</exec>
+			</then>
+			<else>
+				<echo message="La opción de detener la APP está desactivada" />
+			</else>
+		</if>
+	</target>
+
+	<target name="MONITORING_APP">
+		<if>
+			<istrue value="${final.deploy.config.app.monitoring}" />
+			<then>
+				<exec executable="C:\PSTools\paexec.exe" failonerror="true" resultproperty="execrc">
+					<arg value="-accepteula" />
+					<arg value="\\srvbusdesa01" />
+					<arg value="cmd" />
+					<arg value="/c" />
+					<arg value="&quot;E:\IBM\MQSI\9.0.0.3\bin\mqsiprofile.cmd&quot; &amp;&amp; mqsichangeflowmonitoring NODE_DESA_01 -e ${final.ambiente.eg} -c active -j -k ${final.deploy.app.name}" />
+				</exec>
+			</then>
+			<else>
+				<echo message="NO se detecta la necesidad de activar monitoreo" />
+			</else>
+		</if>
+
+	</target>
+
+	<target name="leerBARpreMod" depends="init">
+		<property name="final.barreview.logname" value="BUILD_${env.BUILD_NUMBER}_readBAR_preModBAR.txt" />
+		<antcall target="leerBAR" />
+	</target>
+	<target name="leerBARpostMod" depends="init">
+		<property name="final.barreview.logname" value="BUILD_${env.BUILD_NUMBER}_readBAR_postModBAR.txt" />
+		<antcall target="leerBAR" />
+	</target>
+
+	<target name="leerBAR" depends="init">
+		<echo message="final.barreview.logname: ${final.barreview.logname}" />
+
+		<for list="${final.deploy.config}" param="letter">
+			<sequential>
+				<var name="final.index" unset="true" />
+				<property name="final.index" value="@{letter}" />
+				<var name="final.deploy.app.name" unset="true" />
+				<var name="final.ambiente.eg" unset="true" />
+				<fl:let>
+					final.deploy.app.name := split('${final.index}',':')[0]
+				</fl:let>
+				<fl:let>
+					final.ambiente.eg := split('${final.index}',':')[1]
+				</fl:let>
+
+				<var name="final.bar.name" unset="true" />
+				<property name="final.bar.name" value="${final.output.dir}${file.separator}${final.deploy.app.name}_${final.deploy.ambiente}_rev${final.deploy.app.revision}_FR${final.deploy.fr.number}_BUILD_${env.BUILD_NUMBER}.bar" />
+				<echo message="final.bar.name: ${final.bar.name}" />
+
+				<echo message="final.deploy.app.name: ${final.deploy.app.name}" />
+
+				<var name="final.barreview.log" unset="true" />
+				<property name="final.barreview.log" value="${final.output.dir}${file.separator}${final.deploy.app.name}_${final.barreview.logname}" />
+				<echo message="final.barreview.log: {final.barreview.log}" />
+
+				<exec executable="cmd" failonerror="true" resultproperty="execrc">
+					<arg value="/c ${final.home.engine}${file.separator}mqsiprofile.cmd &amp;&amp; CALL ${final.home.engine}${file.separator}mqsireadbar -b ${final.bar.name} -r -v ${final.barreview.log}" />
+				</exec>
+
+			</sequential>
+		</for>
+	</target>
+
+
+	<target name="modificarBAR" depends="init">
+		<taskdef resource="net/sf/antcontrib/antcontrib.properties" />
+		<taskdef resource="net/sf/antcontrib/antlib.xml" />
+		<echo message="final.modbar.log: ${final.modbar.log}" />
+
+		<for list="${final.deploy.config}" param="letter">
+			<sequential>
+				<var name="final.index" unset="true" />
+				<property name="final.index" value="@{letter}" />
+				<var name="final.deploy.app.name" unset="true" />
+				<var name="final.ambiente.eg" unset="true" />
+				<fl:let>
+					final.deploy.app.name := split('${final.index}',':')[0]
+				</fl:let>
+				<fl:let>
+					final.ambiente.eg := split('${final.index}',':')[1]
+				</fl:let>
+
+				<var name="final.bar.name" unset="true" />
+				<property name="final.bar.name" value="${final.output.dir}${file.separator}${final.deploy.app.name}_${final.deploy.ambiente}_rev${final.deploy.app.revision}_FR${final.deploy.fr.number}_BUILD_${env.BUILD_NUMBER}.bar" />
+
+				<var name="final.modbar.properties" unset="true" />
+				<property name="final.modbar.properties" value="${final.deploy.app.name}_${final.deploy.ambiente}.properties" />
+				<echo message="final.modbar.properties: ${final.modbar.properties}" />
+
+				<if>
+					<available file="${final.modbar.properties}" />
+					<then>
+						<echo message="Existe el archivo de propiedades, se procederá a modificar el BAR con la configuracion del properties y con configuraciones manuales, si existen" />
+						<var name="final.modbar.log" unset="true" />
+						<property name="final.modbar.log" value="${final.output.dir}${file.separator}${final.deploy.app.name}_BUILD_${env.BUILD_NUMBER}_modBAR.txt" />
+						<echo message="final.bar.name: ${final.bar.name}" />
+						<echo message="final.deploy.app.name: ${final.deploy.app.name}" />
+						<var name="extra.params.modbar.properties" unset="true" />
+						<echo message="final.modbar.config.manual: ${final.modbar.config.manual}" />
+						<if>
+							<istrue value="${final.modbar.config.manual}" />
+							<then>
+								<echo message="Existen parametros manuales para modificar el BAR" />
+								<echo message="final.modbar.config.extra: ${final.modbar.config.extra}" />
+								<antcall target="modificarBARConPropertiesConManuales" />
+							</then>
+							<else>
+								<echo message="No exixten parametros manuales para modificar el BAR" />
+								<antcall target="modificarBARConPropertiesSinManuales" />
+							</else>
+						</if>
+					</then>
+					<else>
+						<echo message="No existe archivo de propiedades: ${final.modbar.properties}" />
+						<echo message="Se procederá a modificar el BAR con configuraciones manuales, si existen" />
+						<echo message="final.modbar.config.manual: ${final.modbar.config.manual}" />
+
+						<if>
+							<istrue value="${final.modbar.config.manual}" />
+							<then>
+								<echo message="Se detecta la necesidad de modificacion manual del BAR" />
+								<echo message="final.modbar.config.extra: ${final.modbar.config.extra}" />
+								<antcall target="modificarBARSinPropertiesConParametrosManuales" />
+							</then>
+							<else>
+								<echo message="No existen parametros manuales para modificar el BAR" />
+								<antcall target="modificarBARSinPropertiesSinParametrosManuales" />
+							</else>
+						</if>
+
+					</else>
+				</if>
+			</sequential>
+		</for>
+	</target>
+
+	<target name="modificarBARConPropertiesConManuales">
+		<propertyregex property="extra.params.modbar.properties" input="${final.modbar.config.extra}" regexp=":" replace="=" global="true" />
+		<echo message="extra.params.modbar.properties: ${extra.params.modbar.properties}" />
+		<exec executable="cmd" failonerror="true" resultproperty="execrc">
+			<arg value="/c ${final.home.engine}${file.separator}mqsiprofile.cmd &amp;&amp; CALL ${final.home.engine}${file.separator}mqsiapplybaroverride -b ${final.bar.name} -k ${final.deploy.app.name} -p ${final.modbar.properties} -m &quot;${extra.params.modbar.properties}&quot; -v ${final.modbar.log}" />
+		</exec>
+	</target>
+
+	<target name="modificarBARConPropertiesSinManuales">
+		<exec executable="cmd" failonerror="true" resultproperty="execrc">
+			<arg value="/c ${final.home.engine}${file.separator}mqsiprofile.cmd &amp;&amp; CALL ${final.home.engine}${file.separator}mqsiapplybaroverride -b ${final.bar.name} -k ${final.deploy.app.name} -p ${final.modbar.properties} -v ${final.modbar.log}" />
+		</exec>
+	</target>
+
+	<target name="modificarBARSinPropertiesSinParametrosManuales">
+		<exec executable="cmd" failonerror="true" resultproperty="execrc">
+			<arg value="/c ${final.home.engine}${file.separator}mqsiprofile.cmd &amp;&amp; CALL ${final.home.engine}${file.separator}mqsiapplybaroverride -b ${final.bar.name} -k ${final.deploy.app.name} -v ${final.modbar.log}" />
+		</exec>
+	</target>
+
+	<target name="modificarBARSinPropertiesConParametrosManuales">
+		<propertyregex property="extra.params.modbar.properties" input="${final.modbar.config.extra}" regexp=":" replace="=" global="true" />
+		<echo message="extra.params.modbar.properties: ${extra.params.modbar.properties}" />
+		<exec executable="cmd" failonerror="true" resultproperty="execrc">
+			<arg value="/c ${final.home.engine}${file.separator}mqsiprofile.cmd &amp;&amp; CALL ${final.home.engine}${file.separator}mqsiapplybaroverride -b ${final.bar.name} -k ${final.deploy.app.name} -m &quot;${extra.params.modbar.properties}&quot; -v ${final.modbar.log}" />
+		</exec>
+	</target>
+
+	<target name="UnitTestingSOAP">
+		<if>
+			<istrue value="${final.deploy.config.unit.testing}" />
+			<then>
+				<echo message="SOAP UI Output Directory: ${final.output.dir}${file.separator}UnitTesting" />
+				<echo message="SOAP UI Projects Directory: ${final.output.dir.props}${file.separator}" />
+
+				<exec dir="C:\SmartBear\SoapUI-5.4.0\bin\" executable="cmd" failonerror="true" resultproperty="execrc">
+					<arg line="/c testrunner.bat -a -r -f &quot;${final.output.dir}${file.separator}UnitTesting&quot; &quot;${final.output.dir.props}${file.separator}${final.job.name}-${final.deploy.ambiente}-soapui-project.xml&quot;" />
+				</exec>
+			</then>
+			<else>
+				<echo message="NO se detecta la necesidad de Unit Testing SOAP" />
+			</else>
+		</if>
+
+	</target>
+
+
+	<target name="ComandosBroker">
+		<if>
+			<istrue value="${final.deploy.config.script.broker}" />
+			<then>
+				<exec executable="C:\PSTools\paexec.exe" failonerror="true" resultproperty="execrc">
+					<arg value="-accepteula" />
+					<arg value="\\srvbusdesa01" />
+					<arg value="cmd" />
+					<arg value="/c" />
+					<arg value="&quot;E:\IBM\MQSI\9.0.0.3\bin\mqsiprofile.cmd&quot; &amp;&amp; mqsilist -w 500" />
+				</exec>
+			</then>
+			<else>
+				<echo message="NO se detecta la necesidad de ejecutar Script Broker" />
+			</else>
+		</if>
+	</target>
+
+	<target name="ComandosMQ">
+		<if>
+			<istrue value="${final.deploy.config.script.mq}" />
+			<then>
+				<exec executable="C:\PSTools\paexec.exe" failonerror="true" resultproperty="execrc">
+					<arg value="-accepteula" />
+					<arg value="\\srvbusdesa01" />
+					<arg value="cmd" />
+					<arg value="/c" />
+					<arg value="&quot;E:\IBM\MQSI\9.0.0.3\bin\mqsiprofile.cmd&quot; &amp;&amp; runmqsc QMGR_DESA &lt; F:\BUS\servicios\UT005_TranslateErrorMQ\QUEUES.PCF" />
+				</exec>
+			</then>
+			<else>
+				<echo message="NO se detecta la necesidad de ejecutar Script MQ" />
+			</else>
+		</if>
+
+
+
+	</target>
+
+	<target name="prepararWorkSpace" depends="init">
+		<echo message="final.output.dir: ${final.output.dir}" />
+		<delete dir="${final.fuentes.workspace}" />
+		<mkdir dir="${final.fuentes.workspace}" />
+		<mkdir dir="${final.output.dir}" />
+
+		<echo message="final.fuentes.origen: ${final.fuentes.origen}" />
+		<copy toDir="${final.fuentes.workspace}">
+			<fileset dir="${final.fuentes.origen}">
+				<include name="*/**" />
+				<exclude name="*" />
+			</fileset>
+			<regexpmapper from="^[^/]*/(.*)$$" to="\1" handledirsep="true" />
+		</copy>
+		<echo message="final.fuentes.workspace: ${final.fuentes.workspace}" />
+
+		<delete dir="${final.fuentes.origen}" />
+
+	</target>
+
+	<target name="respaldarWorkSpace" depends="init">
+		<property name="final.output.dir.backup" value="${final.output.dir}${file.separator}fuentes" />
+		<echo message="final.output.dir.backup: ${final.output.dir.backup}" />
+		<mkdir dir="${final.output.dir.backup}" />
+		<move todir="${final.output.dir.backup}" verbose="false">
+			<fileset dir="${final.fuentes.workspace}">
+			</fileset>
+		</move>
+	</target>
+
+	<target name="limpiar">
+		<delete dir="${final.fuentes.workspace}" />
+	</target>
+
+	<target name="checkoutFuentes" depends="init">
+		<var name="final.fuentes.contador" value="1" />
+
+		<echo message="svnant.repository.user: ${svnant.repository.user}" />
+
+
+		<var name="final.fuentes.log" unset="true" />
+		<property name="final.fuentes.log" value="${final.output.dir}${file.separator}CheckOutSVN_LOG_BUILD_${env.BUILD_NUMBER}.txt" />
+		<echo message="final.fuentes.log: ${final.fuentes.log}" />
+		<for list="${final.fuentes.repositorios}" param="urlfuente">
+			<sequential>
+				<var name="final.fuentes.index" unset="true" />
+				<property name="final.fuentes.index" value="@{urlfuente}" />
+				<var name="final.fuentes.url" unset="true" />
+				<var name="final.fuentes.revision" unset="true" />
+				<fl:let>
+					final.fuentes.url := split('${final.fuentes.index}','@')[0]
+				</fl:let>
+				<fl:let>
+					final.fuentes.revision := split('${final.fuentes.index}','@')[1]
+				</fl:let>
+
+				<echo message="fuentes.url: ${final.fuentes.url}" />
+				<echo message="revision: ${final.fuentes.revision}" />
+
+				<var name="final.fuentes.dir.destino" unset="true" />
+				<property name="final.fuentes.dir.destino" value="${final.fuentes.origen}${file.separator}source${final.fuentes.contador}" />
+				<var name="final.fuentes.url.final" unset="true" />
+				<property name="final.fuentes.url.final" value="${final.fuentes.repositorios.base.url}${final.fuentes.url}" />
+				<echo message="fuentes.destino: ${final.fuentes.dir.destino}" />
+
+				<var name="repositorio.comentario" unset="true" />
+				<exec executable="svn" dir="." outputproperty="repositorio.comentario">
+					<arg line="propget --revprop svn:log -r ${final.fuentes.revision} ${final.fuentes.url.final} --username ${svnant.repository.user} --password ${svnant.repository.passwd}" />
+				</exec>
+
+				<delete dir="${final.fuentes.dir.destino}" />
+				<mkdir dir="${final.fuentes.dir.destino}" />
+
+				<echo>**********************      Repository  ${final.fuentes.url}     *************************</echo>
+				<echo message="Checking out : ${final.fuentes.url.final}" />
+				<svn failonerror="true" javahl="false" svnkit="false">
+					<info target="${final.fuentes.url.final}" verbose="true" />
+					<checkout url="${final.fuentes.url.final}" revision="${final.fuentes.revision}" destPath="${final.fuentes.dir.destino}" />
+				</svn>
+				<echo message="At revision : ${final.fuentes.revision}" />
+				<echo message="Comment : ${repositorio.comentario}" />
+				<echo>**********************      Repository  ${final.fuentes.url}     *************************</echo>
+				<math result="final.fuentes.contador" operand1="${final.fuentes.contador}" operation="+" operand2="1" datatype="int" />
+			</sequential>
+		</for>
+
+	</target>
+
+</project>
